@@ -419,7 +419,8 @@
         </div>
 
         <div class="search-wrapper">
-          <input type="text" id="searchInput" class="form-control" placeholder="Buscar por Nombre, DNI, Animal o Raza..." onkeyup="filterTable()">
+            <input type="text" id="searchInput" class="form-control"
+                placeholder="Buscar por Nombre, DNI, Animal o Raza..." onkeyup="filterTable()">
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
 
@@ -475,10 +476,6 @@
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#anim-tab"
                                     type="button">Datos Animal</button>
-                            </li>
-                            <li class="nav-item">
-                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#prof-tab"
-                                    type="button">Profesional</button>
                             </li>
                         </ul>
 
@@ -575,6 +572,18 @@
                                         <label class="form-label small fw-bold">Pelaje / Color</label>
                                         <input type="text" id="m_pelaje" class="form-control">
                                     </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Veterinario Profesional (Apellido y
+                                            Nombre):</label>
+                                        <input type="text" class="form-control" id="vetNombre"
+                                            placeholder="Ej: Pérez, Juan">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Número de Matrícula:</label>
+                                        <input type="text" class="form-control" id="vetMatricula"
+                                            placeholder="Ej: MP 1234">
+                                    </div>
                                     <div class="col-md-4">
                                         <label class="form-label small fw-bold">Nro Trámite</label>
                                         <input type="text" id="m_nro_tramite" class="form-control fw-bold">
@@ -598,7 +607,6 @@
                                         </button>
                                     </div>
                                 </div>
-
 
 
                                 <div class="tab-pane fade" id="prof-tab">
@@ -636,10 +644,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyVjH2yVJAmGQcv8Up2Xn6gXTAUmy2eWOC8mRkSLGMkctDawlrqLa-d91c4X160HPirA/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYv9A5Iha9a7jvf3uhJE5pBNnrQkLKDHUJAbka3qCibHvPQTyWY_0neAL6UjXyRyvOCw/exec";
 
         let allData = [];
         let groupedData = {};
+        let animalNombreOriginal = "";
         const registroModal = new bootstrap.Modal(document.getElementById('registroModal'));
 
         window.onload = fetchData;
@@ -665,12 +674,12 @@
             const activeTabButton = document.querySelector('#modalTabs .nav-link.active');
             const tabActiva = activeTabButton ? activeTabButton.innerText.trim() : "";
 
-            // 1. LISTA DE CAMPOS OBLIGATORIOS
-            const campos = [
-                'm_nombre', 'm_dni', 'm_domicilio', 'm_telefono', 'm_email', 'm_pro_nac',
-                'm_animal_nom', 'm_raza', 'm_chip', 'm_nac_a', 'm_pelaje', 'm_nro_tramite',
-                'm_pro', 'm_mat'
-            ];
+// 1. LISTA DE CAMPOS OBLIGATORIOS (Actualizado para usar campos de Datos Animal)
+const campos = [
+    'm_nombre', 'm_dni', 'm_domicilio', 'm_telefono', 'm_email', 'm_pro_nac',
+    'm_animal_nom', 'm_raza', 'm_chip', 'm_nac_a', 'm_pelaje', 'm_nro_tramite',
+    'vetNombre', 'vetMatricula'
+];
 
             // Chequeamos si falta alguno
             const algunVacio = campos.some(id => {
@@ -1059,6 +1068,11 @@
             document.getElementById('m_pelaje').value = currentItem["Pelaje:"] || '';
             // --- NUEVO CAMPO AGREGADO SEGÚN SOLICITUD ---
             document.getElementById('m_nro_tramite').value = currentItem["NRO_TRAMITE"] || '';
+            // 4. Llenado de formulario (Datos del Animal)
+            animalNombreOriginal = currentItem["Nombre del Animal:"] || '';
+            // ------------------------------------
+
+            document.getElementById('m_raza').value = currentItem["Raza:"] || '';
 
 
             // --- NUEVO: FORMATEO DE FECHA DE NACIMIENTO (dd/mm/aaaa) ---
@@ -1100,59 +1114,59 @@
 
             registroModal.show();
         }
-       async function deleteRegistry(dni, animalNombre = null) {
-    // Si no viene animalNombre, es porque se apretó el tacho de la tabla principal
-    const esBorradoCompleto = (animalNombre === null);
-    
-    const mensaje = esBorradoCompleto 
-        ? `¿Estás seguro? Se borrará al PROPIETARIO y a TODOS sus animales asociados (DNI: ${dni}).`
-        : `¿Deseas eliminar solo al animal "${animalNombre}"?`;
+        async function deleteRegistry(dni, animalNombre = null) {
+            // Si no viene animalNombre, es porque se apretó el tacho de la tabla principal
+            const esBorradoCompleto = (animalNombre === null);
 
-    const result = await Swal.fire({
-        title: esBorradoCompleto ? '¡BORRADO TOTAL!' : 'Eliminar Animal',
-        text: mensaje,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'SÍ, ELIMINAR',
-        cancelButtonText: 'CANCELAR'
-    });
+            const mensaje = esBorradoCompleto
+                ? `¿Estás seguro? Se borrará al PROPIETARIO y a TODOS sus animales asociados (DNI: ${dni}).`
+                : `¿Deseas eliminar solo al animal "${animalNombre}"?`;
 
-    if (result.isConfirmed) {
-        showLoading(true);
-        try {
-            await fetch(APP_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ 
-                    action: "delete", 
-                    data: { 
-                        dni: dni, 
-                        animal_nombre: animalNombre // Si es null, el Script debe borrar todo el DNI
-                    } 
-                })
+            const result = await Swal.fire({
+                title: esBorradoCompleto ? '¡BORRADO TOTAL!' : 'Eliminar Animal',
+                text: mensaje,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'SÍ, ELIMINAR',
+                cancelButtonText: 'CANCELAR'
             });
 
-            Swal.fire('Eliminado', 'La base de datos se actualizó.', 'success');
-            
-            // Si estábamos dentro del modal y borramos un animal, limpiamos los campos
-            if(!esBorradoCompleto) {
-                ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a'].forEach(id => {
-                    document.getElementById(id).value = "";
-                });
-            } else {
-                // Si borramos todo, cerramos el modal por las dudas
-                registroModal.hide();
-            }
+            if (result.isConfirmed) {
+                showLoading(true);
+                try {
+                    await fetch(APP_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: "delete",
+                            data: {
+                                dni: dni,
+                                animal_nombre: animalNombre // Si es null, el Script debe borrar todo el DNI
+                            }
+                        })
+                    });
 
-            setTimeout(fetchData, 1000);
-        } catch (e) {
-            Swal.fire('Error', 'No se pudo procesar el borrado.', 'error');
-        } finally {
-            showLoading(false);
+                    Swal.fire('Eliminado', 'La base de datos se actualizó.', 'success');
+
+                    // Si estábamos dentro del modal y borramos un animal, limpiamos los campos
+                    if (!esBorradoCompleto) {
+                        ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a'].forEach(id => {
+                            document.getElementById(id).value = "";
+                        });
+                    } else {
+                        // Si borramos todo, cerramos el modal por las dudas
+                        registroModal.hide();
+                    }
+
+                    setTimeout(fetchData, 1000);
+                } catch (e) {
+                    Swal.fire('Error', 'No se pudo procesar el borrado.', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }
         }
-    }
-}
 
 
 
@@ -1472,24 +1486,24 @@
         }
 
         function prepararNuevoAnimal() {
-    // Limpiamos los campos del animal
-    ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a'].forEach(id => {
-        document.getElementById(id).value = "";
-    });
-    document.getElementById('m_sexo').value = "MACHO";
-    
-    // IMPORTANTE: Reseteamos el nombre original para que el sistema sepa que es uno NUEVO
-    animalNombreOriginal = ""; 
+            // Limpiamos los campos del animal
+            ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a'].forEach(id => {
+                document.getElementById(id).value = "";
+            });
+            document.getElementById('m_sexo').value = "MACHO";
 
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'info',
-        title: 'Campos listos para nuevo animal',
-        showConfirmButton: false,
-        timer: 2000
-    });
-}
+            // IMPORTANTE: Reseteamos el nombre original para que el sistema sepa que es uno NUEVO
+            animalNombreOriginal = "";
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Campos listos para nuevo animal',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
 
         async function saveChanges() {
             const dni = document.getElementById('m_dni').value;
@@ -1552,32 +1566,32 @@
         }
 
         function filterTable() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-    
-    // Si no hay nada escrito, mostramos todo
-    if (searchTerm === "") {
-        renderTable(allData);
-        return;
-    }
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
 
-    const filtered = allData.filter(item => {
-        // Convertimos los campos principales a string y minúsculas para comparar
-        const nombreProp = String(item["Nombre y Apellido:"] || "").toLowerCase();
-        const dniProp = String(item["Número de documento:"] || "").toLowerCase();
-        const nombreAni = String(item["Nombre del Animal:"] || "").toLowerCase();
-        const razaAni = String(item["Raza:"] || "").toLowerCase();
-        const chipAni = String(item["Número de Microchip:"] || "").toLowerCase();
+            // Si no hay nada escrito, mostramos todo
+            if (searchTerm === "") {
+                renderTable(allData);
+                return;
+            }
 
-        // Si el término buscado está en CUALQUIERA de estos campos, lo devuelve
-        return nombreProp.includes(searchTerm) || 
-               dniProp.includes(searchTerm) || 
-               nombreAni.includes(searchTerm) || 
-               razaAni.includes(searchTerm) ||
-               chipAni.includes(searchTerm);
-    });
+            const filtered = allData.filter(item => {
+                // Convertimos los campos principales a string y minúsculas para comparar
+                const nombreProp = String(item["Nombre y Apellido:"] || "").toLowerCase();
+                const dniProp = String(item["Número de documento:"] || "").toLowerCase();
+                const nombreAni = String(item["Nombre del Animal:"] || "").toLowerCase();
+                const razaAni = String(item["Raza:"] || "").toLowerCase();
+                const chipAni = String(item["Número de Microchip:"] || "").toLowerCase();
 
-    renderTable(filtered);
-}
+                // Si el término buscado está en CUALQUIERA de estos campos, lo devuelve
+                return nombreProp.includes(searchTerm) ||
+                    dniProp.includes(searchTerm) ||
+                    nombreAni.includes(searchTerm) ||
+                    razaAni.includes(searchTerm) ||
+                    chipAni.includes(searchTerm);
+            });
+
+            renderTable(filtered);
+        }
     </script>
 
 </body>
