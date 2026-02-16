@@ -419,7 +419,7 @@
         </div>
 
         <div class="search-wrapper">
-            <input type="text" id="searchInput" placeholder="Buscar por DNI o Dueño..." onkeyup="filterTable()">
+          <input type="text" id="searchInput" class="form-control" placeholder="Buscar por Nombre, DNI, Animal o Raza..." onkeyup="filterTable()">
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
 
@@ -636,7 +636,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFt8KIZkBVMRbdw6ATuM1GP-trjYAnRn58usuCTT_Nl2U3u-Y_c0i2szgQqQXGu0rc_Q/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyVjH2yVJAmGQcv8Up2Xn6gXTAUmy2eWOC8mRkSLGMkctDawlrqLa-d91c4X160HPirA/exec";
 
         let allData = [];
         let groupedData = {};
@@ -1100,53 +1100,59 @@
 
             registroModal.show();
         }
-        async function deleteRegistry(dni, animalNombre = null) {
-            const esPropietarioCompleto = (animalNombre === null);
+       async function deleteRegistry(dni, animalNombre = null) {
+    // Si no viene animalNombre, es porque se apretó el tacho de la tabla principal
+    const esBorradoCompleto = (animalNombre === null);
+    
+    const mensaje = esBorradoCompleto 
+        ? `¿Estás seguro? Se borrará al PROPIETARIO y a TODOS sus animales asociados (DNI: ${dni}).`
+        : `¿Deseas eliminar solo al animal "${animalNombre}"?`;
 
-            const textoAlerta = esPropietarioCompleto
-                ? `¿Estás seguro? Se borrará al PROPIETARIO y a TODOS sus animales asociados.`
-                : `¿Deseas eliminar solo al animal "${animalNombre}" de este propietario?`;
+    const result = await Swal.fire({
+        title: esBorradoCompleto ? '¡BORRADO TOTAL!' : 'Eliminar Animal',
+        text: mensaje,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'SÍ, ELIMINAR',
+        cancelButtonText: 'CANCELAR'
+    });
 
-            const result = await Swal.fire({
-                title: esPropietarioCompleto ? '¡BORRADO TOTAL!' : 'Eliminar Animal',
-                text: textoAlerta,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
+    if (result.isConfirmed) {
+        showLoading(true);
+        try {
+            await fetch(APP_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ 
+                    action: "delete", 
+                    data: { 
+                        dni: dni, 
+                        animal_nombre: animalNombre // Si es null, el Script debe borrar todo el DNI
+                    } 
+                })
             });
 
-            if (result.isConfirmed) {
-                showLoading(true);
-                try {
-                    // Si animalNombre es null, el Script entenderá que debe borrar por DNI todo
-                    await fetch(APP_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: JSON.stringify({
-                            action: "delete",
-                            data: { dni: dni, animal_nombre: animalNombre }
-                        })
-                    });
-
-                    Swal.fire('Eliminado', 'La base de datos se actualizó correctamente.', 'success');
-                    if (!esPropietarioCompleto) {
-                        // Si borró un animal solo, actualizamos el modal sin cerrarlo
-                        setTimeout(() => {
-                            fetchData().then(() => actualizarListaGestion(dni));
-                        }, 1000);
-                    } else {
-                        registroModal.hide();
-                        setTimeout(fetchData, 1000);
-                    }
-                } catch (e) {
-                    Swal.fire('Error', 'No se pudo procesar la solicitud', 'error');
-                } finally {
-                    showLoading(false);
-                }
+            Swal.fire('Eliminado', 'La base de datos se actualizó.', 'success');
+            
+            // Si estábamos dentro del modal y borramos un animal, limpiamos los campos
+            if(!esBorradoCompleto) {
+                ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a'].forEach(id => {
+                    document.getElementById(id).value = "";
+                });
+            } else {
+                // Si borramos todo, cerramos el modal por las dudas
+                registroModal.hide();
             }
+
+            setTimeout(fetchData, 1000);
+        } catch (e) {
+            Swal.fire('Error', 'No se pudo procesar el borrado.', 'error');
+        } finally {
+            showLoading(false);
         }
+    }
+}
 
 
 
@@ -1544,6 +1550,34 @@
                 showLoading(false);
             }
         }
+
+        function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    
+    // Si no hay nada escrito, mostramos todo
+    if (searchTerm === "") {
+        renderTable(allData);
+        return;
+    }
+
+    const filtered = allData.filter(item => {
+        // Convertimos los campos principales a string y minúsculas para comparar
+        const nombreProp = String(item["Nombre y Apellido:"] || "").toLowerCase();
+        const dniProp = String(item["Número de documento:"] || "").toLowerCase();
+        const nombreAni = String(item["Nombre del Animal:"] || "").toLowerCase();
+        const razaAni = String(item["Raza:"] || "").toLowerCase();
+        const chipAni = String(item["Número de Microchip:"] || "").toLowerCase();
+
+        // Si el término buscado está en CUALQUIERA de estos campos, lo devuelve
+        return nombreProp.includes(searchTerm) || 
+               dniProp.includes(searchTerm) || 
+               nombreAni.includes(searchTerm) || 
+               razaAni.includes(searchTerm) ||
+               chipAni.includes(searchTerm);
+    });
+
+    renderTable(filtered);
+}
     </script>
 
 </body>
