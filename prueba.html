@@ -200,6 +200,8 @@
             border-bottom: 2px solid var(--zoobase-teal);
         }
 
+
+        
         .header-titles {
             display: flex;
             flex-direction: column;
@@ -589,7 +591,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoP5Pvj9GX9APYMR61ZfqLfXmvV9uCIImzBRL05EMixTTn5_TOmws0QjQ7ivMTQcULhw/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHNmbv0Cn7qHXlYgtr0RobFotT1P94Zf7EsKSyhMGFYEHpeIXRgDdQLpFAVbKaPASyYw/exec";
 
         let allData = [];
         let groupedData = {};
@@ -673,12 +675,16 @@
                 selectorAnimales.classList.add('d-none');
             }
         }
-        async function fetchData() {
+async function fetchData() {
             showLoading(true);
             try {
                 const response = await fetch(APP_SCRIPT_URL);
                 allData = await response.json();
                 renderTable(allData);
+                
+// --- AGREGADO: Alerta solo para los de HOY ---
+                verificarSoloNuevosDeHoy(allData);
+                
             } catch (err) { console.error(err); }
             finally { showLoading(false); }
         }
@@ -1123,6 +1129,67 @@
             // Al ser formulario nuevo, ocultamos el botón de credencial
             document.getElementById('btnGenerarCredencial').style.display = "none";
             registroModal.show();
+        }
+
+function verificarSoloNuevosDeHoy(data) {
+            const hoy = new Date();
+            const diaHoy = hoy.getDate();
+            const mesHoy = hoy.getMonth();
+            const anioHoy = hoy.getFullYear();
+
+            const nuevosDeHoy = data.filter(item => {
+                // 1. Verificamos si es NUEVO
+                const estado = String(item["AVISADO por email luego del armado de la credencial?"] || "").trim().toUpperCase();
+                const esNuevo = (estado === "" || estado === "NUEVO" || estado === "NO");
+
+                // 2. Verificamos la FECHA (Marca temporal)
+                if (!item["Marca temporal"]) return false;
+                
+                // Convertimos la Marca temporal a objeto Date
+                const fechaReg = new Date(item["Marca temporal"]);
+                
+                // Comparamos pedazo por pedazo (día, mes y año)
+                const esDeHoy = (
+                    fechaReg.getDate() === diaHoy &&
+                    fechaReg.getMonth() === mesHoy &&
+                    fechaReg.getFullYear() === anioHoy
+                );
+
+                return esNuevo && esDeHoy;
+            });
+
+            // Si hay registros, disparamos el SweetAlert
+            if (nuevosDeHoy.length > 0) {
+                let listado = '<div style="text-align: left; margin-top: 15px; font-family: sans-serif;">';
+                
+                nuevosDeHoy.forEach(reg => {
+                    // Importante: usamos las claves exactas de tu objeto
+                    const nombre = reg["Nombre y Apellido:"] || "Sin nombre";
+                    const dni = reg["Número de documento:"] || "Sin DNI";
+                    
+                    listado += `
+                        <div style="border-bottom: 1px solid #eee; padding: 15px 0; text-align: center;">
+                            <div style="color: #352355; font-size: 1.4em; font-weight: bold; margin-bottom: 5px;">
+                                👤 ${nombre}
+                            </div>
+                            <div style="color: #555; font-size: 1.1em; letter-spacing: 1px;">
+                                <b>DNI:</b> ${dni}
+                            </div>
+                        </div>`;
+                });
+                
+                listado += '</div>';
+
+                Swal.fire({
+                    title: '<span style="color: #352355;">¡Nuevo Ingreso Hoy!</span>',
+                    html: listado,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#352355',
+                    backdrop: `rgba(53, 35, 85, 0.2)`, // Un tonito lila de fondo
+                    showClass: { popup: 'animate__animated animate__zoomIn' }
+                });
+            }
         }
     </script>
     
