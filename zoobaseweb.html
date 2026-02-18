@@ -692,19 +692,23 @@
             });
 
             // 2. VALIDACIÓN DE DUPLICADO
-            const duplicado = allData.find(reg =>
-                String(reg["NRO_TRAMITE"]).trim() === nroTramite &&
-                nroTramite !== "" &&
-                String(reg["Número de documento:"]).trim() !== dniActual
-            );
+            const duplicado = allData.find(reg => 
+            String(reg["NRO_TRAMITE"]).trim() === nroTramite && 
+            nroTramite !== "" &&
+            // Y acá está la magia: Si lo encontré, me fijo que NO sea el que estoy editando ahora.
+            // Si el DNI o el Nombre del Animal son distintos al original, entonces ES DUPLICADO.
+            !(String(reg["Número de documento:"]).trim() === dniActual && 
+              String(reg["Nombre del Animal:"]).trim() === animalNombreOriginal)
+        );
 
-            if (duplicado) {
-                nroTramiteInput.classList.add('is-invalid');
-                btnCredencial.style.display = "none";
-                return;
-            } else {
-                nroTramiteInput.classList.remove('is-invalid');
-            }
+        if (duplicado) {
+            nroTramiteInput.classList.add('is-invalid');
+            // Opcional: Podrías mostrar un mensajito o tooltip acá avisando que ya existe
+            btnCredencial.style.display = "none";
+            return;
+        } else {
+            nroTramiteInput.classList.remove('is-invalid');
+        }
 
             // 3. LÓGICA FINAL PARA MOSTRAR BOTÓN
             // Se muestra si estamos en la pestaña de Datos Animal (o similar), todos los campos llenos y no hay duplicados.
@@ -804,7 +808,7 @@
             doc.line(centroX, 15, centroX, 15 + altoCard);
 
             dibujarEncabezadoIzquierda(marginX, 18, 95, "Registro Municipal Canino ReMCa");
-            dibujarEncabezadoIzquierda(centroX, 18, 95, "ZOONOSIS");
+            dibujarEncabezadoIzquierda(centroX, 18, 95, "Dirección de Zoonosis y Bienestar Animal - MGP");
 
             let yPos = 52;
             doc.setFontSize(9);
@@ -849,16 +853,18 @@
             doc.roundedRect(marginX, off, anchoCard, altoCard, 3, 3, 'S');
             doc.line(centroX, off, centroX, off + altoCard);
 
-            dibujarEncabezadoIzquierda(marginX, off + 5, 95, "TRAMITE", "Registro Municipal Canino");
-            dibujarEncabezadoIzquierda(centroX, off + 5, 95, "ZOONOSIS");
+            dibujarEncabezadoIzquierda(marginX, off + 5, 95,"Registro Municipal Canino");
+            dibujarEncabezadoIzquierda(centroX, off + 5, 95, "Dirección de Zoonosis y Bienestar Animal - MGP");
+
 
             yPos = off + 38;
             doc.setFontSize(9); doc.setFont("helvetica", "normal");
+            doc.text(`N° Trámite: ${datos.nroTramite}`, 15, yPos + gap * 4);
             doc.text(`Microchip N°: ${datos.chip}`, 15, yPos);
             doc.text(`Nombre: ${datos.animal}`, 15, yPos + gap);
             doc.text(`Raza: ${datos.raza}`, 15, yPos + gap * 2);
             doc.setFontSize(10); doc.setFont("helvetica", "bold");
-            doc.text(`N° Trámite: ${datos.nroTramite}`, 15, yPos + gap * 4);
+            
 
             doc.setFontSize(8); doc.setFont("helvetica", "normal");
             doc.text("Firma y Aclaración: ____________________", 15, off + 80);
