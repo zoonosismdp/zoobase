@@ -150,7 +150,7 @@
 
     <script>
     // URL de tu Web App (Asegurate que termine en /exec)
-    const appscript = "https://script.google.com/macros/s/AKfycbwFLnN0n_Yx7RBxh1OGCfU3IrcwOYojhtLJEgWhHUSffcKkHgZg0njKCAsHFxyCG36d8A/exec";
+    const appscript = "https://script.google.com/macros/s/AKfycbwXVQecen8n-QkiAKs4HhxO1MOBbYDjksczpF-IA7JBBxhSxYyWeBI8bpKhcp8Q2qb6GQ/exec";
 
     function toggleLoading(isLoading) {
         document.getElementById('loader').style.display = isLoading ? 'block' : 'none';
@@ -169,10 +169,11 @@
         toggleLoading(true);
 
         try {
-            // Petición POST al servidor de Google
             const response = await fetch(appscript, {
                 method: 'POST',
-                mode: 'no-cors', // Para evitar bloqueos de CORS externos
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
                 body: JSON.stringify({ 
                     action: 'login', 
                     user: user, 
@@ -180,29 +181,34 @@
                 })
             });
 
-            /* NOTA IMPORTANTE: Al usar 'no-cors', no podemos leer la respuesta JSON directamente.
-               Si el login es exitoso, asumimos que todo salió bien y guardamos localmente.
-               Para una validación real por fetch, el HTML debería estar en el mismo servidor 
-               o usar un proxy. Pero aquí forzamos la sesión:
-            */
-            
-            // Simulamos el éxito para el flujo:
-            localStorage.setItem('zoobase_user', user);
-            localStorage.setItem('zoobase_isAuth', 'true');
+            const result = await response.json();
 
-            Swal.fire({
-                icon: 'success',
-                title: '¡Acceso Correcto!',
-                text: `Bienvenido ${user}`,
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                window.location.href = "remca.html"; 
-            });
+            if (result.success) {
+                // Guardamos TODO en el navegador
+                localStorage.setItem('zoobase_user', user);
+                localStorage.setItem('zoobase_permiso', result.permiso); // ¡Agregamos el permiso!
+                localStorage.setItem('zoobase_isAuth', 'true');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Acceso Correcto!',
+                    // ACÁ ESTÁ EL CAMBIO DEL SALUDO:
+                    text: `Bienvenido/a ${user} (Permiso: ${result.permiso})`, 
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = "remca.html"; 
+                });
+            } else {
+                toggleLoading(false);
+                Swal.fire('Acceso denegado', result.message, 'error');
+            }
 
         } catch (error) {
+            // ... (el catch queda igual)
             toggleLoading(false);
-            Swal.fire('Error', 'Problema al intentar conectar.', 'error');
+            console.error(error);
+            Swal.fire('Error', 'Problema al intentar conectar con la base de datos.', 'error');
         }
     }
 
