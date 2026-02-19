@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoobase - Gestor Registro Animal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --zoobase-purple: #352355;
+            --zoobase-dark: #1a202c;
+            --zoobase-teal: #19C2C9;
+            --stm-gray: #f8f9fa;
+        }
+
+        /* Animación de pulso para registros muy nuevos (menos de un mes) */
+        @keyframes pulse-red {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+
+
+        .badge-new-titileo {
+            background-color: #dc3545 !important;
+            /* Rojo Bootstrap */
+            color: white !important;
+            border: 1px solid #a71d2a !important;
+            animation: pulse-red 1.5s infinite;
+            /* Titileo rítmico */
+            font-weight: bold;
+        }
+
+        /* --- MODAL ESTÁTICO SIN DESPLAZAMIENTOS LOCOS --- */
+        .modal-content {
+            min-height: 550px;
+            /* Altura mínima para que no salte al cambiar de tab */
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            /* Solo hace scroll lo de adentro si es muy largo */
+            flex: 1;
+        }
+
+        #animalForm {
+            min-height: 320px;
+            /* Asegura que el espacio de los inputs sea constante */
+        }
+
+        /* Evitamos que el selector de animales mueva todo */
+        #animalSelectorContainer {
+            min-height: 50px;
+            margin-bottom: 15px;
+        }
+
+        /* Animación Flip 3D personalizada */
+        .animate__flipInY {
+            animation-duration: 0.8s;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #e9ecef;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* --- ENCABEZADO --- */
+        .zoobase-header {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background-color: var(--zoobase-purple);
+            padding: 10px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            height: 70px;
+            /* Altura fija para controlar el sticky del de abajo */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* --- MODAL ESTÁTICO Y ROBUSTO --- */
+        #registroModal .modal-content {
+            height: 620px;
+            /* Altura fija para evitar desplazamientos */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            /* Tamaño normal */
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            font-size: 0.85rem;
+            /* Acá lo hacemos más chico */
+            opacity: 0.9;
+            /* Le bajamos un toque la intensidad para que resalte menos que el título */
+            margin-top: 2px;
+        }
+
+        #registroModal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            /* Solo scrollea por dentro si es necesario */
+            padding: 25px !important;
+        }
+
+        /* Forzamos que el área de las pestañas tenga un tamaño constante */
+        .tab-content {
+            min-height: 340px;
+            margin-top: 15px;
+        }
+
+        /* Selector de animales siempre con el mismo lugar */
+        #animalSelectorContainer {
+            min-height: 55px;
+            margin-bottom: 15px;
+        }
+
+        /* Estilo para los botones de acción para que no se amontonen */
+        .btn-action-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #m_nro_tramite.is-invalid {
+            border-color: #dc3545;
+            background-image: none;
+            /* Quita el icono de BS si molesta */
+        }
+
+        .tab-content {
+            padding-top: 15px;
+            min-height: 280px;
+            /* Ajustalo según cuántos campos tengas */
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            /* Esto hace que se pongan uno abajo del otro */
+            justify-content: center;
+        }
+
+        /* --- ENCABEZADOS FIJOS --- */
+        .zoobase-header {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            /* Para que quede por encima de todo */
+            background-color: var(--zoobase-purple);
+            padding: 12px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sub-header {
+            position: sticky;
+            top: 70px;
+            /* TIENE QUE SER IGUAL AL ALTO DEL HEADER ANTERIOR */
+            z-index: 1010;
+            background-color: var(--zoobase-dark);
+            color: white;
+            padding: 10px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--zoobase-teal);
+        }
+
+
+
+        .header-titles {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .title-main {
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-sub {
+            font-size: 0.85rem;
+            font-weight: normal;
+            opacity: 0.8;
+            padding-left: 28px;
+            /* Para que alinee con el texto de arriba y no con el icono */
+        }
+
+        /* Ajuste del buscador para que no quede pegado al logo */
+        .search-wrapper {
+            margin-left: 40px !important;
+        }
+
+        .btn-nuevo-ppp {
+            background-color: var(--zoobase-teal);
+            color: white;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+            font-size: 0.9rem;
+        }
+
+        .search-wrapper {
+            flex-grow: 1;
+            max-width: 450px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            border-radius: 4px;
+            border: none;
+            padding: 6px 40px 6px 15px;
+            outline: none;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        /* --- SUB HEADER --- */
+        .sub-header {
+            background-color: var(--zoobase-dark);
+            color: white;
+            padding: 10px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .listado-titulo {
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .totalizadores {
+            display: flex;
+            gap: 10px;
+        }
+
+        .counter-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .counter-box span {
+            font-weight: bold;
+            color: var(--zoobase-teal);
+        }
+
+        /* --- TABLA --- */
+        .card-custom {
+            margin: 20px;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            overflow: hidden;
+        }
+
+        .status-badge {
+            font-weight: 800;
+            font-size: 0.7rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .badge-ok {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .badge-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+
+        .multi-badge {
+            background: #ffeb3b;
+            color: #000;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-top: 4px;
+        }
+
+        /* --- CHIPS DE ANIMALES --- */
+        .animal-selector {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+            overflow-x: auto;
+        }
+
+        .animal-chip {
+            padding: 6px 15px;
+            border-radius: 20px;
+            background: #f0f0f0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .animal-chip.active {
+            background: var(--zoobase-teal);
+            color: white;
+            font-weight: bold;
+            border-color: #15aab1;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span class="mt-3 fw-bold">Aguarde un instante...</span>
+    </div>
+
+    <header class="zoobase-header">
+        <div class="logo-container">
+            <div class="header-title">
+                <i class="fa-solid fa-paw"></i> Zoobase versión WEB
+            </div>
+            <div class="header-subtitle">
+                <i class="fa-solid "></i> Dirección de Zoonosis y Bienestar Animal
+            </div>
+        </div>
+
+        <div class="search-wrapper">
+            <input type="text" id="searchInput" class="form-control"
+                placeholder="Buscar por Nombre, DNI, Animal o Raza..." onkeyup="filterTable()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+
+        <button class="btn-nuevo-ppp" onclick="openNewForm()">
+            <i class="fa-solid fa-plus-circle"></i> Nuevo PPP
+        </button>
+    </header>
+
+    <div class="sub-header">
+        <div class="listado-titulo"><i class="fa-solid fa-list me-2"></i>Registros de propietarios y animales</div>
+        <div class="totalizadores">
+            <div class="counter-box">DUEÑOS: <span id="totalDuenos">0</span></div>
+            <div class="counter-box">ANIMALES: <span id="totalAnimales">0</span></div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="card-custom">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">➡️ Solicitud</th>
+                            <th>👤 Propietario</th>
+                            <th class="text-center">ℹ️ Estado</th>
+                            <th>🪪 DNI</th>
+                            <th>🐾 Animal / Raza</th>
+                            <th class="text-center">🅰️Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="registroModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Ficha de Solicitud</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="animalSelectorContainer" class="animal-selector d-none"></div>
+
+                    <form id="animalForm">
+                        <ul class="nav nav-tabs mb-3" id="modalTabs">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#prop-tab"
+                                    type="button">👤 Propietario</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#anim-tab"
+                                    type="button">🐾 Datos Animal</button>
+                            </li>
+                        </ul>
+
+
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="prop-tab">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-bold">Nombre y Apellido</label>
+                                        <input type="text" id="m_nombre" class="form-control">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">DNI</label>
+                                        <input type="text" id="m_dni" class="form-control bg-light" readonly>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-bold">Domicilio</label>
+                                        <input type="text" id="m_domicilio" class="form-control">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Teléfono</label>
+                                        <input type="text" id="m_telefono" class="form-control">
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label small fw-bold">Email</label>
+                                        <input type="text" id="m_email" class="form-control">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-bold">Fecha de Nacimiento</label>
+                                        <input type="text" id="m_pro_nac" class="form-control" placeholder="DD/MM/AAAA">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="anim-tab">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Nombre Animal</label>
+                                        <input type="text" id="m_animal_nom" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Raza</label>
+                                        <select class="form-select" id="m_raza" name="raza">
+                                            <option value="MESTIZO">MESTIZO</option>
+                                            <option value="Airedale Terrier">Airedale Terrier</option>
+                                            <option value="Akita Inu">Akita Inu</option>
+                                            <option value="American Staffordshire Terrier">American Staffordshire
+                                                Terrier</option>
+                                            <option value="Pitbull American Terrier">Pitbull American Terrier</option>
+                                            <option value="Boyero de berna">Boyero de berna</option>
+                                            <option value="Bóxer">Bóxer</option>
+                                            <option value="Bullmastif">Bullmastif</option>
+                                            <option value="Bull Terrier">Bull Terrier</option>
+                                            <option value="Cané corso">Cané corso</option>
+                                            <option value="Doberman">Doberman</option>
+                                            <option value="Dogo Argentino">Dogo Argentino</option>
+                                            <option value="Dogo Alemán">Dogo Alemán</option>
+                                            <option value="Gran Danés">Gran Danés</option>
+                                            <option value="Dogo Canario">Dogo Canario</option>
+                                            <option value="Presa Canario">Presa Canario</option>
+                                            <option value="Dogo de burdeos">Dogo de burdeos</option>
+                                            <option value="Fila Brasileño">Fila Brasileño</option>
+                                            <option value="Gran perro Japonés">Gran perro Japonés</option>
+                                            <option value="Kuvas">Kuvas</option>
+                                            <option value="Mastiff (Mastín Inglés)">Mastiff (Mastín Inglés)</option>
+                                            <option value="Mastín Napolitano">Mastín Napolitano</option>
+                                            <option value="Ovejero Alemán">Ovejero Alemán</option>
+                                            <option value="Ovejero Belga">Ovejero Belga</option>
+                                            <option value="Pastor del Cáucaso">Pastor del Cáucaso</option>
+                                            <option value="Rottweiler">Rottweiler</option>
+                                            <option value="San Bernardo">San Bernardo</option>
+                                            <option value="Schnauzer Gigante">Schnauzer Gigante</option>
+                                            <option value="Staffordshire Bull Terrier">Staffordshire Bull Terrier
+                                            </option>
+                                            <option value="Viejo Pastor Inglés">Viejo Pastor Inglés</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Chip</label>
+                                        <input type="text" id="m_chip" class="form-control fw-bold">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Sexo</label>
+                                        <select id="m_sexo" class="form-select">
+                                            <option value="Macho">Macho</option>
+                                            <option value="Hembra">Hembra</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Nacimiento</label>
+                                        <input type="text" id="m_nac_a" class="form-control" placeholder="DD/MM/AAAA">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-bold">Pelaje / Color</label>
+                                        <input type="text" id="m_pelaje" class="form-control">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Veterinario Profesional (Apellido y
+                                            Nombre):</label>
+                                        <input type="text" class="form-control" id="vetNombre"
+                                            placeholder="Ej: Pérez, Juan">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold">Número de Matrícula:</label>
+                                        <input type="text" class="form-control" id="vetMatricula"
+                                            placeholder="Ej: MP 1234">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Nro Trámite</label>
+                                        <input type="text" id="m_nro_tramite" class="form-control fw-bold">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label small fw-bold text-primary">Estado del Trámite</label>
+                                        <select id="m_estado_val" class="form-select border-primary fw-bold">
+                                            <option value="NUEVO">NUEVO</option>
+                                            <option value="TRAMITE">TRAMITE</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                                        <button type="button" class="btn btn-outline-primary shadow-sm"
+                                            onclick="prepararNuevoAnimal()">
+                                            <i class="fas fa-paw me-1"></i> NUEVO ANIMAL
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger shadow-sm"
+                                            onclick="eliminarAnimalActual()">
+                                            <i class="fas fa-trash-alt me-1"></i> ELIMINAR ESTE ANIMAL
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade" id="prof-tab">
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label small fw-bold">Veterinario Actuante</label>
+                                            <input type="text" id="m_pro" class="form-control">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">N° Matrícula</label>
+                                            <input type="text" id="m_mat" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </form>
+                    <div class="mt-4 pt-2 border-top">
+                        <small class="text-muted">Fecha solicitud original: <span id="m_timestamp_txt">-</span></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveChanges()"><i
+                            class="fa-solid fa-save me-2"></i>Guardar Cambios</button>
+                    <button type="button" id="btnGenerarCredencial" class="btn text-white"
+                        style="background-color: var(--zoobase-teal); border: none; display: none;"
+                        onclick="generarCredencial()">
+                        <i class="fas fa-id-card me-2"></i>Generar Credencial
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+
+    
+    // 1. CONTROL DE ACCESO (Ponelo al principio de todo)
+    (function() {
+        const isAuth = localStorage.getItem('zoobase_isAuth');
+        if (isAuth !== 'true') {
+            // Si no está logueado, lo mandamos de patitas al login
+            window.location.href = "index.html";
+        }
+    })();
+
+    // 2. El resto de tu lógica de remca.html...
+    console.log("Bienvenido al sistema, usuario autenticado.");
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYv9A5Iha9a7jvf3uhJE5pBNnrQkLKDHUJAbka3qCibHvPQTyWY_0neAL6UjXyRyvOCw/exec";
+
+        let allData = [];
+        let groupedData = {};
+        let animalNombreOriginal = "";
+        const registroModal = new bootstrap.Modal(document.getElementById('registroModal'));
+
+        window.onload = fetchData;
+
+        // Escuchar cambios de pestaña y de estado para el botón inteligente
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', actualizarVisibilidadCredencial);
+            });
+            document.getElementById('m_estado_val').addEventListener('change', actualizarVisibilidadCredencial);
+            document.getElementById('m_nro_tramite').addEventListener('input', actualizarVisibilidadCredencial);
+            // Agregamos listeners a todos los campos obligatorios para que el botón aparezca apenas se llenan
+            const camposParaEscuchar = ['m_nombre', 'm_dni', 'm_domicilio', 'm_telefono', 'm_email', 'm_pro_nac', 'm_animal_nom', 'm_chip', 'm_nac_a', 'm_pelaje', 'vetNombre', 'vetMatricula'];
+            camposParaEscuchar.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', actualizarVisibilidadCredencial);
+            });
+        });
+
+        function actualizarVisibilidadCredencial() {
+            const btnCredencial = document.getElementById('btnGenerarCredencial');
+            const nroTramiteInput = document.getElementById('m_nro_tramite');
+            const nroTramite = nroTramiteInput.value.trim();
+            const dniActual = document.getElementById('m_dni').value;
+
+            const activeTabButton = document.querySelector('#modalTabs .nav-link.active');
+            const tabActiva = activeTabButton ? activeTabButton.innerText.trim().toUpperCase() : "";
+
+            // 1. LISTA DE CAMPOS OBLIGATORIOS
+            const campos = [
+                'm_nombre', 'm_dni', 'm_domicilio', 'm_telefono', 'm_email', 'm_pro_nac',
+                'm_animal_nom', 'm_raza', 'm_chip', 'm_nac_a', 'm_pelaje', 'm_nro_tramite',
+                'vetNombre', 'vetMatricula'
+            ];
+
+            // Chequeamos si falta alguno
+            const algunVacio = campos.some(id => {
+                const el = document.getElementById(id);
+                return !el || el.value.trim() === "";
+            });
+
+            // 2. VALIDACIÓN DE DUPLICADO
+            const duplicado = allData.find(reg =>
+                String(reg["NRO_TRAMITE"]).trim() === nroTramite &&
+                nroTramite !== "" &&
+                // Y acá está la magia: Si lo encontré, me fijo que NO sea el que estoy editando ahora.
+                // Si el DNI o el Nombre del Animal son distintos al original, entonces ES DUPLICADO.
+                !(String(reg["Número de documento:"]).trim() === dniActual &&
+                    String(reg["Nombre del Animal:"]).trim() === animalNombreOriginal)
+            );
+
+            if (duplicado) {
+                nroTramiteInput.classList.add('is-invalid');
+                // Opcional: Podrías mostrar un mensajito o tooltip acá avisando que ya existe
+                btnCredencial.style.display = "none";
+                return;
+            } else {
+                nroTramiteInput.classList.remove('is-invalid');
+            }
+
+            // 3. LÓGICA FINAL PARA MOSTRAR BOTÓN
+            // Se muestra si estamos en la pestaña de Datos Animal (o similar), todos los campos llenos y no hay duplicados.
+            if ((tabActiva === "DATOS ANIMAL" || tabActiva.includes("ANIMAL")) && !algunVacio && !duplicado) {
+                btnCredencial.style.display = "inline-block";
+            } else {
+                btnCredencial.style.display = "none";
+            }
+
+            // Manejo de chips de animales
+            const selectorAnimales = document.getElementById('animalSelectorContainer');
+            if (tabActiva === "DATOS ANIMAL" || tabActiva.includes("ANIMAL")) {
+                selectorAnimales.classList.remove('d-none');
+            } else {
+                selectorAnimales.classList.add('d-none');
+            }
+        }
+        async function fetchData() {
+            showLoading(true);
+            try {
+                const response = await fetch(APP_SCRIPT_URL);
+                allData = await response.json();
+                renderTable(allData);
+
+                // --- AGREGADO: Alerta solo para los de HOY ---
+                verificarSoloNuevosDeHoy(allData);
+
+            } catch (err) { console.error(err); }
+            finally { showLoading(false); }
+        }
+
+
+        // 1. ACÁ PEGA EL CÓDIGO BASE64 DE TU LOGO
+        const LOGO_BASE64 = "data:image/png;base64,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 "
+
+
+async function generarCredencial() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const dni = document.getElementById('m_dni').value;
+    if (!dni) {
+        Swal.fire('Atención', 'No hay datos cargados.', 'warning');
+        return;
+    }
+
+    // --- RECOPILACIÓN DE DATOS (Corregido según tu HTML) ---
+    const datos = {
+        animal: document.getElementById('m_animal_nom').value,
+        especie: document.getElementById('m_especie')?.value || "CANINO", 
+        raza: document.getElementById('m_raza').value,
+        sexo: document.getElementById('m_sexo').value,
+        pelaje: document.getElementById('m_pelaje').value,
+        chip: document.getElementById('m_chip').value,
+        // Fecha del animal según tu ID: m_nac_a
+        nacimientoAnimal: document.getElementById('m_nac_a').value, 
+        
+        propietario: document.getElementById('m_nombre').value,
+        dni: dni,
+        // Fecha del propietario según tu ID: m_pro_nac
+        nacimientoPropietario: document.getElementById('m_pro_nac').value, 
+        
+        domicilio: document.getElementById('m_domicilio').value,
+        tel: document.getElementById('m_telefono').value,
+        nroTramite: document.getElementById('m_nro_tramite').value,
+        profesional: document.getElementById('vetNombre').value,
+        matricula: document.getElementById('vetMatricula').value
+    };
+
+    const fechaHoy = new Date().toLocaleDateString('es-AR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const marginX = 10;
+    const anchoCard = 190;
+    const altoCard = 80; 
+    const centroX = 105;
+    const gap = 5.2;
+
+    const dibujarEncabezado = (x, y, anchoMaximo, titulo, subtitulo) => {
+        const sub = subtitulo || "";
+        if (typeof LOGO_BASE64 !== 'undefined' && LOGO_BASE64 && LOGO_BASE64.length > 50) {
+            const logoW = 60; const logoH = 10;
+            const logoX = x + (anchoMaximo - logoW) / 2;
+            doc.addImage(LOGO_BASE64, 'PNG', logoX, y, logoW, logoH);
+        }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(titulo, x + (anchoMaximo / 2), y + 14, { align: "center" });
+        doc.setFontSize(7);
+        doc.text(sub, x + (anchoMaximo / 2), y + 18, { align: "center" });
+    };
+
+    // ==========================================
+    // PARTE 1: CREDENCIAL SUPERIOR (PROPIETARIO)
+    // ==========================================
+    const y1 = 10; 
+    doc.setDrawColor(0);
+    doc.roundedRect(marginX, y1, anchoCard, altoCard, 3, 3, 'S');
+    doc.line(centroX, y1, centroX, y1 + altoCard);
+
+    dibujarEncabezado(marginX, y1 + 2, 95, "Registro Municipal Canino ReMCa", "REMCA");
+    dibujarEncabezado(centroX, y1 + 2, 95, "Zoonosis y Bienestar Animal - MGP", "CREDENCIAL");
+
+    let yPos = y1 + 30;
+    doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.text(`MICROCHIP N°: ${datos.chip}`, 13, yPos);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nombre: ${datos.animal}`, 13, yPos + gap * 2);
+    doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos + gap * 3); // Agregado abajo
+    doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos + gap * 4);
+    doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos + gap * 5);
+        doc.setFont("helvetica", "bold");
+    doc.text(`Vet: ${datos.profesional}`, 13, yPos + gap * 6.2);
+    doc.setFontSize(8);
+    doc.text(`Matrícula: ${datos.matricula}`, 13, yPos + gap * 7.2);
+    doc.setFont("helvetica", "bold");
+    
+    doc.text("DATOS DEL PROPIETARIO", 108, yPos);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9)
+    doc.text(`Nombre: ${datos.propietario}`, 108, yPos + gap *2);
+    doc.text(`DNI: ${datos.dni}`, 108, yPos + gap * 3);
+    doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos + gap * 4); // Agregado arriba
+    doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos + gap * 5);
+    doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos + gap * 6);
+
+    doc.line(145, y1 + 72, 195, y1 + 72);
+    doc.setFontSize(6); doc.text("Firma y Sello Autoridad", 170, y1 + 75, { align: "center" });
+
+    // LÍNEA DE CORTE
+    doc.setLineDash([2, 2], 0); doc.line(5, 95, 205, 95); doc.setLineDash([], 0);
+
+    // ==========================================
+    // PARTE 2: CREDENCIAL INFERIOR (MUNI)
+    // ==========================================
+    const off = 100; 
+    doc.roundedRect(marginX, off, anchoCard, altoCard, 3, 3, 'S');
+    doc.line(centroX, off, centroX, off + altoCard);
+
+    dibujarEncabezado(marginX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS ANIMAL");
+    dibujarEncabezado(centroX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS PROPIETARIO");
+
+    let yPos2 = off + 28;
+    // IZQUIERDA: DATOS ANIMAL COMPLETOS + PROFESIONAL
+    doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.text(`N° TRÁMITE: ${datos.nroTramite}`, 13, yPos2);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Chip: ${datos.chip}`, 13, yPos2 + gap);
+    doc.text(`Nombre: ${datos.animal}`, 13, yPos2 + gap * 2);
+    doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos2 + gap * 3); // Agregado abajo
+    doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos2 + gap * 4);
+    doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos2 + gap * 5);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`Vet: ${datos.profesional}`, 13, yPos2 + gap * 6.2);
+    doc.setFontSize(8);
+    doc.text(`Matrícula: ${datos.matricula}`, 13, yPos2 + gap * 7.2);
+
+    // DERECHA: DATOS PROPIETARIO COMPLETOS
+    doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.text("DATOS PROPIETARIO", 108, yPos2);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nombre: ${datos.propietario}`, 108, yPos2 + gap);
+    doc.text(`DNI: ${datos.dni}`, 108, yPos2 + gap * 2);
+    doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos2 + gap * 3); // Agregado abajo
+    doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos2 + gap * 4);
+    doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos2 + gap * 5);
+
+    // FIRMAS Y FECHA TALÓN
+    doc.line(145, off + 72, 195, off + 72);
+    doc.setFontSize(6); 
+    doc.text("Firma del Propietario / Responsable", 170, off + 75, { align: "center" });
+    doc.text(`Mar del Plata, ${fechaHoy}`, 170, off + 78, { align: "center" });
+
+    doc.save(`Credencial_${datos.animal}.pdf`);
+}
+        function renderTable(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            groupedData = data.reduce((acc, curr) => {
+                let dni = String(curr["Número de documento:"] || "").trim();
+                if (!dni) dni = "S/D";
+
+                if (!acc[dni]) {
+                    acc[dni] = { info: { ...curr }, animals: [] };
+                }
+                acc[dni].animals.push(curr);
+                return acc;
+            }, {});
+
+            const keys = Object.keys(groupedData);
+
+            keys.sort((a, b) => {
+                const itemA = groupedData[a].info;
+                const itemB = groupedData[b].info;
+
+                const getPrio = (item) => {
+                    const valorAL = String(item["AVISADO por email luego del armado de la credencial?"] || "").trim().toUpperCase();
+                    const esNuevo = (valorAL === "" || valorAL === "NUEVO" || valorAL === "NO");
+
+                    if (esNuevo) {
+                        const fechaSolicitud = new Date(item["Marca temporal"]);
+                        const hoy = new Date();
+                        const diferenciaDias = (hoy - fechaSolicitud) / (1000 * 60 * 60 * 24);
+                        if (diferenciaDias <= 30) return 3;
+                        return 2;
+                    }
+                    if (valorAL === "TRAMITE") return 1;
+                    return 0;
+                };
+
+                const prioA = getPrio(itemA);
+                const prioB = getPrio(itemB);
+
+                if (prioA !== prioB) return prioB - prioA;
+
+                const fechaA = new Date(itemA["Marca temporal"] || 0);
+                const fechaB = new Date(itemB["Marca temporal"] || 0);
+                return fechaB - fechaA;
+            });
+
+            keys.forEach(dni => {
+                const group = groupedData[dni];
+                const item = group.info;
+
+                const valorAL = String(item["AVISADO por email luego del armado de la credencial?"] || "").trim().toUpperCase();
+                const esNuevo = (valorAL === "" || valorAL === "NUEVO" || valorAL === "NO");
+                const estado = esNuevo ? "NUEVO" : "TRAMITE";
+
+                let extraClass = "";
+                if (estado === "NUEVO") {
+                    const fechaSolicitud = new Date(item["Marca temporal"]);
+                    const hoy = new Date();
+                    const diferenciaDias = (hoy - fechaSolicitud) / (1000 * 60 * 60 * 24);
+                    if (diferenciaDias <= 30) {
+                        extraClass = "badge-new-titileo";
+                    }
+                }
+
+                let fechaFormateada = '-';
+                if (item["Marca temporal"]) {
+                    const d = new Date(item["Marca temporal"]);
+                    if (!isNaN(d)) {
+                        fechaFormateada = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                    }
+                }
+
+                const statusCfg = estado === "NUEVO"
+                    ? { class: `badge-ok ${extraClass}`, icon: "fa-sparkles" }
+                    : { class: "badge-pending", icon: "fa-spinner" };
+
+                const tr = document.createElement('tr');
+                tr.style.cursor = "pointer";
+                tr.onclick = () => showModal(dni);
+                tr.innerHTML = `
+            <td class="ps-4 small text-muted">${fechaFormateada}</td>
+            <td>
+                <div class="fw-bold">${item["Nombre y Apellido:"] || 'Sin Nombre'}</div>
+                ${group.animals.length > 1 ? `<div class="multi-badge"><i class="fa-solid fa-layer-group"></i> ${group.animals.length} Animales</div>` : ''}
+            </td>
+            <td class="text-center">
+                <span class="status-badge ${statusCfg.class}">
+                    <i class="fa-solid ${statusCfg.icon}"></i> ${estado}
+                </span>
+            </td>
+            <td><span class="badge bg-light text-dark border">${dni}</span></td>
+            <td>
+                <div class="text-primary fw-bold small">${item["Nombre del Animal:"] || '-'}</div>
+                <div class="text-muted small">${item["Raza:"] || '-'}</div>
+            </td>
+            <td class="text-center">
+                <div class="btn-action-group">
+                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteRegistry('${dni}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); showModal('${dni}')">
+                        <i class="fa-solid fa-eye"></i> Ver
+                    </button>
+                </div>
+            </td>
+        `;
+                tableBody.appendChild(tr);
+            });
+
+            document.getElementById('totalDuenos').textContent = keys.length;
+            document.getElementById('totalAnimales').textContent = data.length;
+        }
+        function showModal(dni, animalIndex = 0) {
+            const group = groupedData[dni];
+            const currentItem = group.animals[animalIndex];
+
+            const selector = document.getElementById('animalSelectorContainer');
+            if (group.animals.length > 1) {
+                selector.innerHTML = '';
+                group.animals.forEach((anim, idx) => {
+                    const chip = document.createElement('div');
+                    chip.className = `animal-chip ${idx === animalIndex ? 'active' : ''}`;
+                    chip.innerHTML = `<i class="fa-solid fa-dog"></i> ${anim["Nombre del Animal:"]}`;
+                    chip.onclick = (e) => { e.stopPropagation(); showModal(dni, idx); };
+                    selector.appendChild(chip);
+                });
+            } else {
+                selector.innerHTML = '';
+            }
+
+            document.getElementById('m_nombre').value = currentItem["Nombre y Apellido:"] || '';
+            document.getElementById('m_dni').value = dni;
+            document.getElementById('m_email').value = currentItem["Correo Electrónico:"] || '';
+
+            document.getElementById('m_domicilio').value = currentItem["Domicilio:"] || '';
+            document.getElementById('m_telefono').value = currentItem["Teléfono (fijo/cel):"] || '';
+
+            let fechaNacProFormateada = '';
+            const rawFechaNacPro = currentItem["Fecha de nacimiento:"];
+            if (rawFechaNacPro) {
+                const d = new Date(rawFechaNacPro);
+                if (!isNaN(d)) {
+                    const dia = String(d.getDate()).padStart(2, '0');
+                    const mes = String(d.getMonth() + 1).padStart(2, '0');
+                    const anio = d.getFullYear();
+                    fechaNacProFormateada = `${dia}/${mes}/${anio}`;
+                } else {
+                    fechaNacProFormateada = rawFechaNacPro;
+                }
+            }
+            document.getElementById('m_pro_nac').value = fechaNacProFormateada;
+
+
+            const valorAL = String(currentItem["AVISADO por email luego del armado de la credencial?"] || "").trim().toUpperCase();
+            const estadoCalculado = currentItem.estadoManual || (valorAL === "NUEVO" ? "NUEVO" : "TRAMITE");
+            document.getElementById('m_estado_val').value = estadoCalculado;
+
+            document.getElementById('m_animal_nom').value = currentItem["Nombre del Animal:"] || '';
+            document.getElementById('m_raza').value = currentItem["Raza:"] || '';
+            document.getElementById('m_chip').value = currentItem["Número de Microchip:"] || '';
+            document.getElementById('m_sexo').value = currentItem["Sexo:"] || 'Macho';
+            document.getElementById('m_pelaje').value = currentItem["Pelaje:"] || '';
+            document.getElementById('m_nro_tramite').value = currentItem["NRO_TRAMITE"] || '';
+
+            document.getElementById('vetNombre').value = currentItem["Apellido y nombre del profesional:"] || '';
+            document.getElementById('vetMatricula').value = currentItem["Número de Matrícula:"] || '';
+
+            animalNombreOriginal = currentItem["Nombre del Animal:"] || '';
+
+            let fechaNacFormateada = '';
+            const rawFechaNac = currentItem["Fecha de Nacimiento:"];
+            if (rawFechaNac) {
+                const d = new Date(rawFechaNac);
+                if (!isNaN(d)) {
+                    const dia = String(d.getDate()).padStart(2, '0');
+                    const mes = String(d.getMonth() + 1).padStart(2, '0');
+                    const anio = d.getFullYear();
+                    fechaNacFormateada = `${dia}/${mes}/${anio}`;
+                } else {
+                    fechaNacFormateada = rawFechaNac;
+                }
+            }
+            document.getElementById('m_nac_a').value = fechaNacFormateada;
+
+            document.getElementById('m_pro').value = currentItem["Apellido y nombre del profesional:"] || '';
+            document.getElementById('m_mat').value = currentItem["Número de Matrícula:"] || '';
+
+            let fechaTxt = '-';
+            if (currentItem["Marca temporal"]) {
+                const d = new Date(currentItem["Marca temporal"]);
+                if (!isNaN(d)) {
+                    fechaTxt = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                }
+            }
+            document.getElementById('m_timestamp_txt').textContent = fechaTxt;
+
+            const btnSave = document.querySelector('.btn-primary[onclick="saveChanges()"]');
+            btnSave.setAttribute('data-dni', dni);
+
+            actualizarVisibilidadCredencial();
+
+            registroModal.show();
+        }
+        async function deleteRegistry(dni, animalNombre = null) {
+            const esBorradoCompleto = (animalNombre === null);
+
+            const mensaje = esBorradoCompleto
+                ? `¿Estás seguro? Se borrará al PROPIETARIO y a TODOS sus animales asociados (DNI: ${dni}).`
+                : `¿Deseas eliminar solo al animal "${animalNombre}"?`;
+
+            const result = await Swal.fire({
+                title: esBorradoCompleto ? '¡BORRADO TOTAL!' : 'Eliminar Animal',
+                text: mensaje,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'SÍ, ELIMINAR',
+                cancelButtonText: 'CANCELAR'
+            });
+
+            if (result.isConfirmed) {
+                showLoading(true);
+                try {
+                    await fetch(APP_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: "delete",
+                            data: {
+                                dni: dni,
+                                animal_nombre: animalNombre
+                            }
+                        })
+                    });
+
+                    Swal.fire('Eliminado', 'La base de datos se actualizó.', 'success');
+
+                    if (!esBorradoCompleto) {
+                        limpiarInputsAnimal();
+                    } else {
+                        registroModal.hide();
+                    }
+
+                    setTimeout(fetchData, 1000);
+                } catch (e) {
+                    Swal.fire('Error', 'No se pudo procesar el borrado.', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }
+        }
+
+
+
+        function showLoading(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+        function openNewForm() {
+            document.getElementById('animalForm').reset();
+            document.getElementById('m_dni').readOnly = false;
+            document.getElementById('animalSelectorContainer').classList.add('d-none');
+            document.getElementById('btnGenerarCredencial').style.display = "none";
+            registroModal.show();
+        }
+
+        function verificarSoloNuevosDeHoy(data) {
+            const hoy = new Date();
+            const diaHoy = hoy.getDate();
+            const mesHoy = hoy.getMonth();
+            const anioHoy = hoy.getFullYear();
+
+            const nuevosDeHoy = data.filter(item => {
+                const estado = String(item["AVISADO por email luego del armado de la credencial?"] || "").trim().toUpperCase();
+                const esNuevo = (estado === "" || estado === "NUEVO" || estado === "NO");
+
+                if (!item["Marca temporal"]) return false;
+
+                const fechaReg = new Date(item["Marca temporal"]);
+
+                const esDeHoy = (
+                    fechaReg.getDate() === diaHoy &&
+                    fechaReg.getMonth() === mesHoy &&
+                    fechaReg.getFullYear() === anioHoy
+                );
+
+                return esNuevo && esDeHoy;
+            });
+
+            if (nuevosDeHoy.length > 0) {
+                let listado = '<div style="text-align: left; margin-top: 15px; font-family: sans-serif;">';
+
+                nuevosDeHoy.forEach(reg => {
+                    const nombre = reg["Nombre y Apellido:"] || "Sin nombre";
+                    const dni = reg["Número de documento:"] || "Sin DNI";
+                    const animal = reg["Nombre del Animal:"] || "Sin nombre";
+
+                    listado += `
+                        <div style="border-bottom: 1px solid #eee; padding: 15px 0; text-align: center;">
+                            <div style="color: #352355; font-size: 1.4em; font-weight: bold; margin-bottom: 5px;">
+                                👤 Propietario:  ${nombre}
+                            </div>
+                            <div style="color: #555; font-size: 1.1em; letter-spacing: 1px; margin-bottom: 5px;">
+                                <b>🪪 DNI:</b> ${dni}
+                            </div>
+                            <div style="color: #19C2C9; font-size: 1.2em; font-weight: bold;">
+                                🐾 Animal: ${animal}
+                            </div>
+                        </div>`;
+                });
+
+                listado += '</div>';
+
+                Swal.fire({
+                    title: '<span style="color: #352355;">¡Nuevo Ingreso Hoy!</span>',
+                    html: listado,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#352355',
+                    backdrop: `rgba(53, 35, 85, 0.2)`,
+                    showClass: { popup: 'animate__animated animate__zoomIn' }
+                });
+            }
+        }
+
+        function limpiarInputsAnimal() {
+            ['m_animal_nom', 'm_raza', 'm_chip', 'm_pelaje', 'm_nac_a', 'vetNombre', 'vetMatricula'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+        }
+
+
+        async function eliminarAnimalActual() {
+            const dni = document.getElementById('m_dni').value;
+            const nombreAnimal = document.getElementById('m_animal_nom').value;
+
+            if (!dni || !nombreAnimal) {
+                return Swal.fire('Info', 'No hay datos de un animal para borrar.', 'info');
+            }
+
+            const result = await Swal.fire({
+                title: '¿Borrar animal?',
+                text: `Se eliminará a "${nombreAnimal}" del sistema.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'SÍ, BORRAR',
+                cancelButtonText: 'CANCELAR'
+            });
+
+            if (result.isConfirmed) {
+                showLoading(true);
+                try {
+                    await fetch(APP_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: "delete",
+                            data: { dni: dni, animal_nombre: nombreAnimal }
+                        })
+                    });
+
+                    Swal.fire('Eliminado', 'El registro se borró con éxito.', 'success');
+
+                    limpiarInputsAnimal();
+
+                    setTimeout(fetchData, 1000);
+
+                } catch (e) {
+                    Swal.fire('Error', 'No se pudo eliminar.', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }
+        }
+
+        function prepararNuevoAnimal() {
+            limpiarInputsAnimal();
+            document.getElementById('m_sexo').value = "MACHO";
+
+            animalNombreOriginal = "";
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Campos listos para nuevo animal',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        async function saveChanges() {
+            const dni = document.getElementById('m_dni').value;
+            const nombreAnimalNuevo = document.getElementById('m_animal_nom').value;
+            const nroTramiteIngresado = document.getElementById('m_nro_tramite').value.trim();
+
+            if (!dni || !nombreAnimalNuevo) {
+                return Swal.fire('Atención', 'DNI y Nombre del Animal son obligatorios.', 'warning');
+            }
+
+            // --- INICIO NUEVA VALIDACIÓN DE TRÁMITE DUPLICADO CON DATOS ---
+            if (nroTramiteIngresado !== "") {
+                const tramiteDuplicado = allData.find(r =>
+                    String(r["NRO_TRAMITE"]).trim() === String(nroTramiteIngresado) &&
+                    !(String(r["Número de documento:"]).trim() === String(dni).trim() &&
+                        String(r["Nombre del Animal:"]).trim() === String(animalNombreOriginal).trim())
+                );
+
+                if (tramiteDuplicado) {
+                    const duenoNom = tramiteDuplicado["Nombre y Apellido:"] || "Desconocido";
+                    const animalNom = tramiteDuplicado["Nombre del Animal:"] || "Sin nombre";
+                    return Swal.fire('Error', `El Número de Trámite ya existe. Pertenece a: <b>${duenoNom}</b> - Animal: <b>${animalNom}</b>`, 'error');
+                }
+            }
+            // --- FIN NUEVA VALIDACIÓN ---
+
+            const data = {
+                nombre: document.getElementById('m_nombre').value,
+                dni: dni,
+                domicilio: document.getElementById('m_domicilio').value,
+                telefono: document.getElementById('m_telefono').value,
+                email: document.getElementById('m_email').value,
+                nac_propietario: document.getElementById('m_pro_nac').value,
+                nro_tramite: nroTramiteIngresado,
+                estado: document.getElementById('m_estado_val').value,
+
+                profesional: document.getElementById('vetNombre').value,
+                matricula: document.getElementById('vetMatricula').value,
+
+                animal_nombre: nombreAnimalNuevo,
+                animal_nombre_original: animalNombreOriginal,
+                raza: document.getElementById('m_raza').value,
+                chip: document.getElementById('m_chip').value,
+                sexo: document.getElementById('m_sexo').value,
+                nac_animal: document.getElementById('m_nac_a').value,
+
+                pelaje: document.getElementById('m_pelaje').value
+            };
+
+            const existe = allData.find(r =>
+                String(r["Número de documento:"]).trim() === String(dni).trim() &&
+                String(r["Nombre del Animal:"]).trim() === String(animalNombreOriginal).trim()
+            );
+
+            const accion = existe ? "update" : "add";
+
+            showLoading(true);
+            try {
+                await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: accion, data: data })
+                });
+
+                await fetchData();
+
+                animalNombreOriginal = nombreAnimalNuevo;
+
+                Swal.fire('¡Éxito!', `El registro se guardó correctamente como ${accion === 'update' ? 'actualización' : 'nuevo'}.`, 'success');
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'Hubo un problema al conectar con el servidor.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            if (searchTerm === "") {
+                renderTable(allData);
+                return;
+            }
+
+            const filtered = allData.filter(item => {
+                const nombreProp = String(item["Nombre y Apellido:"] || "").toLowerCase();
+                const dniProp = String(item["Número de documento:"] || "").toLowerCase();
+                const nombreAni = String(item["Nombre del Animal:"] || "").toLowerCase();
+                const razaAni = String(item["Raza:"] || "").toLowerCase();
+                const chipAni = String(item["Número de Microchip:"] || "").toLowerCase();
+
+                return nombreProp.includes(searchTerm) ||
+                    dniProp.includes(searchTerm) ||
+                    nombreAni.includes(searchTerm) ||
+                    razaAni.includes(searchTerm) ||
+                    chipAni.includes(searchTerm);
+            });
+
+            renderTable(filtered);
+        }
+    </script>
+
+</body>
+
+</html>
