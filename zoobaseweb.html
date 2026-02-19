@@ -849,29 +849,32 @@
             // ==========================================
             // PARTE 2: TALÓN TRÁMITE (INFERIOR)
             // ==========================================
-            const off = 110;
+ const off = 110;
             doc.roundedRect(marginX, off, anchoCard, altoCard, 3, 3, 'S');
             doc.line(centroX, off, centroX, off + altoCard);
 
             dibujarEncabezadoIzquierda(marginX, off + 5, 95,"Registro Municipal Canino");
             dibujarEncabezadoIzquierda(centroX, off + 5, 95, "Dirección de Zoonosis y Bienestar Animal - MGP");
 
+            // --- LADO IZQUIERDO (Trámite y Animal) ---
+            // N° Trámite como título (con la misma fuente y altura que "Propietario")
+            doc.setFontSize(10); doc.setFont("helvetica", "bold");
+            doc.text(`N° Trámite: ${datos.nroTramite}`, 15, off + 38);
 
-            yPos = off + 38;
+            // Datos del animal (bajamos yPos a 45 para que quede alineado con la derecha)
+            yPos = off + 45; 
             doc.setFontSize(9); doc.setFont("helvetica", "normal");
-            doc.text(`N° Trámite: ${datos.nroTramite}`, 15, yPos + gap * 4);
             doc.text(`Microchip N°: ${datos.chip}`, 15, yPos);
             doc.text(`Nombre: ${datos.animal}`, 15, yPos + gap);
             doc.text(`Raza: ${datos.raza}`, 15, yPos + gap * 2);
-            doc.setFontSize(10); doc.setFont("helvetica", "bold");
-            
 
             doc.setFontSize(8); doc.setFont("helvetica", "normal");
             doc.text("Firma y Aclaración: ____________________", 15, off + 80);
 
-            // Propietario (Derecha Inferior)
+            // --- LADO DERECHO (Propietario) ---
             doc.setFontSize(10); doc.setFont("helvetica", "bold");
             doc.text("Propietario", 110, off + 38);
+            
             doc.setFont("helvetica", "normal"); doc.setFontSize(9);
             doc.text(`Nombre: ${datos.propietario}`, 110, off + 45);
             doc.text(`DNI: ${datos.dni}`, 110, off + 45 + gap);
