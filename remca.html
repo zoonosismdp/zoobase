@@ -424,9 +424,20 @@
             <i class="fa-solid fa-magnifying-glass"></i>
         </div>
 
-        <button class="btn-nuevo-ppp" onclick="openNewForm()">
+        <div class="d-flex flex-column align-items-end" style="min-width: 250px;">
+    <div id="displayUsuario" class="text-white-50 mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;">
+        </div>
+    
+    <div class="d-flex gap-2">
+        <button class="btn-nuevo-ppp" onclick="openNewForm()" style="padding: 6px 15px; font-size: 0.85rem;">
             <i class="fa-solid fa-plus-circle"></i> Nuevo PPP
         </button>
+        
+        <button class="btn btn-outline-light btn-sm" onclick="cerrarSesion()" style="border-color: rgba(255,255,255,0.3); font-size: 0.8rem; padding: 5px 12px;">
+            <i class="fa-solid fa-power-off"></i> Salir
+        </button>
+    </div>
+</div>
     </header>
 
     <div class="sub-header">
@@ -640,21 +651,52 @@
             </div>
         </div>
     </div>
-<script>
+    <script>
 
-    
-    // 1. CONTROL DE ACCESO (Ponelo al principio de todo)
-    (function() {
-        const isAuth = localStorage.getItem('zoobase_isAuth');
-        if (isAuth !== 'true') {
-            // Si no está logueado, lo mandamos de patitas al login
+
+
+        // 1. CONTROL DE ACCESO
+        // 1. CONTROL DE ACCESO Y GESTIÓN DE USUARIO
+        // CONTROL DE ACCESO Y USUARIO
+(function() {
+    const isAuth = localStorage.getItem('zoobase_isAuth');
+    const userLogueado = localStorage.getItem('zoobase_user') || 'Administrador';
+
+    if (isAuth !== 'true') {
+        window.location.href = "index.html";
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            const display = document.getElementById('displayUsuario');
+            if (display) {
+                display.innerHTML = `<i class="fa-solid fa-circle-user"></i> Sesión: <b>${userLogueado}</b>`;
+            }
+        });
+    }
+})();
+
+// FUNCIÓN PARA CERRAR SESIÓN
+function cerrarSesion() {
+    Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: "Deberás ingresar la clave nuevamente para entrar.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#19C2C9', // Color Teal de tu marca
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        background: '#fff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
             window.location.href = "index.html";
         }
-    })();
+    });
+}
 
-    // 2. El resto de tu lógica de remca.html...
-    console.log("Bienvenido al sistema, usuario autenticado.");
-</script>
+        // 2. El resto de tu lógica de remca.html...
+        console.log("Bienvenido al sistema, usuario autenticado.");
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -759,152 +801,152 @@
         const LOGO_BASE64 = "data:image/png;base64,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 "
 
 
-async function generarCredencial() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-    });
+        async function generarCredencial() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4'
+            });
 
-    const dni = document.getElementById('m_dni').value;
-    if (!dni) {
-        Swal.fire('Atención', 'No hay datos cargados.', 'warning');
-        return;
-    }
+            const dni = document.getElementById('m_dni').value;
+            if (!dni) {
+                Swal.fire('Atención', 'No hay datos cargados.', 'warning');
+                return;
+            }
 
-    // --- RECOPILACIÓN DE DATOS (Corregido según tu HTML) ---
-    const datos = {
-        animal: document.getElementById('m_animal_nom').value,
-        especie: document.getElementById('m_especie')?.value || "CANINO", 
-        raza: document.getElementById('m_raza').value,
-        sexo: document.getElementById('m_sexo').value,
-        pelaje: document.getElementById('m_pelaje').value,
-        chip: document.getElementById('m_chip').value,
-        // Fecha del animal según tu ID: m_nac_a
-        nacimientoAnimal: document.getElementById('m_nac_a').value, 
-        
-        propietario: document.getElementById('m_nombre').value,
-        dni: dni,
-        // Fecha del propietario según tu ID: m_pro_nac
-        nacimientoPropietario: document.getElementById('m_pro_nac').value, 
-        
-        domicilio: document.getElementById('m_domicilio').value,
-        tel: document.getElementById('m_telefono').value,
-        nroTramite: document.getElementById('m_nro_tramite').value,
-        profesional: document.getElementById('vetNombre').value,
-        matricula: document.getElementById('vetMatricula').value
-    };
+            // --- RECOPILACIÓN DE DATOS (Corregido según tu HTML) ---
+            const datos = {
+                animal: document.getElementById('m_animal_nom').value,
+                especie: document.getElementById('m_especie')?.value || "CANINO",
+                raza: document.getElementById('m_raza').value,
+                sexo: document.getElementById('m_sexo').value,
+                pelaje: document.getElementById('m_pelaje').value,
+                chip: document.getElementById('m_chip').value,
+                // Fecha del animal según tu ID: m_nac_a
+                nacimientoAnimal: document.getElementById('m_nac_a').value,
 
-    const fechaHoy = new Date().toLocaleDateString('es-AR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
+                propietario: document.getElementById('m_nombre').value,
+                dni: dni,
+                // Fecha del propietario según tu ID: m_pro_nac
+                nacimientoPropietario: document.getElementById('m_pro_nac').value,
 
-    const marginX = 10;
-    const anchoCard = 190;
-    const altoCard = 80; 
-    const centroX = 105;
-    const gap = 5.2;
+                domicilio: document.getElementById('m_domicilio').value,
+                tel: document.getElementById('m_telefono').value,
+                nroTramite: document.getElementById('m_nro_tramite').value,
+                profesional: document.getElementById('vetNombre').value,
+                matricula: document.getElementById('vetMatricula').value
+            };
 
-    const dibujarEncabezado = (x, y, anchoMaximo, titulo, subtitulo) => {
-        const sub = subtitulo || "";
-        if (typeof LOGO_BASE64 !== 'undefined' && LOGO_BASE64 && LOGO_BASE64.length > 50) {
-            const logoW = 60; const logoH = 10;
-            const logoX = x + (anchoMaximo - logoW) / 2;
-            doc.addImage(LOGO_BASE64, 'PNG', logoX, y, logoW, logoH);
+            const fechaHoy = new Date().toLocaleDateString('es-AR', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            const marginX = 10;
+            const anchoCard = 190;
+            const altoCard = 80;
+            const centroX = 105;
+            const gap = 5.2;
+
+            const dibujarEncabezado = (x, y, anchoMaximo, titulo, subtitulo) => {
+                const sub = subtitulo || "";
+                if (typeof LOGO_BASE64 !== 'undefined' && LOGO_BASE64 && LOGO_BASE64.length > 50) {
+                    const logoW = 60; const logoH = 10;
+                    const logoX = x + (anchoMaximo - logoW) / 2;
+                    doc.addImage(LOGO_BASE64, 'PNG', logoX, y, logoW, logoH);
+                }
+                doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+                doc.text(titulo, x + (anchoMaximo / 2), y + 14, { align: "center" });
+                doc.setFontSize(7);
+                doc.text(sub, x + (anchoMaximo / 2), y + 18, { align: "center" });
+            };
+
+            // ==========================================
+            // PARTE 1: CREDENCIAL SUPERIOR (PROPIETARIO)
+            // ==========================================
+            const y1 = 10;
+            doc.setDrawColor(0);
+            doc.roundedRect(marginX, y1, anchoCard, altoCard, 3, 3, 'S');
+            doc.line(centroX, y1, centroX, y1 + altoCard);
+
+            dibujarEncabezado(marginX, y1 + 2, 95, "Registro Municipal Canino ReMCa", "REMCA");
+            dibujarEncabezado(centroX, y1 + 2, 95, "Zoonosis y Bienestar Animal - MGP", "CREDENCIAL");
+
+            let yPos = y1 + 30;
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text(`MICROCHIP N°: ${datos.chip}`, 13, yPos);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Nombre: ${datos.animal}`, 13, yPos + gap * 2);
+            doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos + gap * 3); // Agregado abajo
+            doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos + gap * 4);
+            doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos + gap * 5);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Vet: ${datos.profesional}`, 13, yPos + gap * 6.2);
+            doc.setFontSize(8);
+            doc.text(`Matrícula: ${datos.matricula}`, 13, yPos + gap * 7.2);
+            doc.setFont("helvetica", "bold");
+
+            doc.text("DATOS DEL PROPIETARIO", 108, yPos);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9)
+            doc.text(`Nombre: ${datos.propietario}`, 108, yPos + gap * 2);
+            doc.text(`DNI: ${datos.dni}`, 108, yPos + gap * 3);
+            doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos + gap * 4); // Agregado arriba
+            doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos + gap * 5);
+            doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos + gap * 6);
+
+            doc.line(145, y1 + 72, 195, y1 + 72);
+            doc.setFontSize(6); doc.text("Firma y Sello Autoridad", 170, y1 + 75, { align: "center" });
+
+            // LÍNEA DE CORTE
+            doc.setLineDash([2, 2], 0); doc.line(5, 95, 205, 95); doc.setLineDash([], 0);
+
+            // ==========================================
+            // PARTE 2: CREDENCIAL INFERIOR (MUNI)
+            // ==========================================
+            const off = 100;
+            doc.roundedRect(marginX, off, anchoCard, altoCard, 3, 3, 'S');
+            doc.line(centroX, off, centroX, off + altoCard);
+
+            dibujarEncabezado(marginX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS ANIMAL");
+            dibujarEncabezado(centroX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS PROPIETARIO");
+
+            let yPos2 = off + 28;
+            // IZQUIERDA: DATOS ANIMAL COMPLETOS + PROFESIONAL
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text(`N° TRÁMITE: ${datos.nroTramite}`, 13, yPos2);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`Chip: ${datos.chip}`, 13, yPos2 + gap);
+            doc.text(`Nombre: ${datos.animal}`, 13, yPos2 + gap * 2);
+            doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos2 + gap * 3); // Agregado abajo
+            doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos2 + gap * 4);
+            doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos2 + gap * 5);
+
+            doc.setFont("helvetica", "bold");
+            doc.text(`Vet: ${datos.profesional}`, 13, yPos2 + gap * 6.2);
+            doc.setFontSize(8);
+            doc.text(`Matrícula: ${datos.matricula}`, 13, yPos2 + gap * 7.2);
+
+            // DERECHA: DATOS PROPIETARIO COMPLETOS
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text("DATOS PROPIETARIO", 108, yPos2);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`Nombre: ${datos.propietario}`, 108, yPos2 + gap);
+            doc.text(`DNI: ${datos.dni}`, 108, yPos2 + gap * 2);
+            doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos2 + gap * 3); // Agregado abajo
+            doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos2 + gap * 4);
+            doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos2 + gap * 5);
+
+            // FIRMAS Y FECHA TALÓN
+            doc.line(145, off + 72, 195, off + 72);
+            doc.setFontSize(6);
+            doc.text("Firma del Propietario / Responsable", 170, off + 75, { align: "center" });
+            doc.text(`Mar del Plata, ${fechaHoy}`, 170, off + 78, { align: "center" });
+
+            doc.save(`Credencial_${datos.animal}.pdf`);
         }
-        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-        doc.text(titulo, x + (anchoMaximo / 2), y + 14, { align: "center" });
-        doc.setFontSize(7);
-        doc.text(sub, x + (anchoMaximo / 2), y + 18, { align: "center" });
-    };
-
-    // ==========================================
-    // PARTE 1: CREDENCIAL SUPERIOR (PROPIETARIO)
-    // ==========================================
-    const y1 = 10; 
-    doc.setDrawColor(0);
-    doc.roundedRect(marginX, y1, anchoCard, altoCard, 3, 3, 'S');
-    doc.line(centroX, y1, centroX, y1 + altoCard);
-
-    dibujarEncabezado(marginX, y1 + 2, 95, "Registro Municipal Canino ReMCa", "REMCA");
-    dibujarEncabezado(centroX, y1 + 2, 95, "Zoonosis y Bienestar Animal - MGP", "CREDENCIAL");
-
-    let yPos = y1 + 30;
-    doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    doc.text(`MICROCHIP N°: ${datos.chip}`, 13, yPos);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Nombre: ${datos.animal}`, 13, yPos + gap * 2);
-    doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos + gap * 3); // Agregado abajo
-    doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos + gap * 4);
-    doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos + gap * 5);
-        doc.setFont("helvetica", "bold");
-    doc.text(`Vet: ${datos.profesional}`, 13, yPos + gap * 6.2);
-    doc.setFontSize(8);
-    doc.text(`Matrícula: ${datos.matricula}`, 13, yPos + gap * 7.2);
-    doc.setFont("helvetica", "bold");
-    
-    doc.text("DATOS DEL PROPIETARIO", 108, yPos);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9)
-    doc.text(`Nombre: ${datos.propietario}`, 108, yPos + gap *2);
-    doc.text(`DNI: ${datos.dni}`, 108, yPos + gap * 3);
-    doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos + gap * 4); // Agregado arriba
-    doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos + gap * 5);
-    doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos + gap * 6);
-
-    doc.line(145, y1 + 72, 195, y1 + 72);
-    doc.setFontSize(6); doc.text("Firma y Sello Autoridad", 170, y1 + 75, { align: "center" });
-
-    // LÍNEA DE CORTE
-    doc.setLineDash([2, 2], 0); doc.line(5, 95, 205, 95); doc.setLineDash([], 0);
-
-    // ==========================================
-    // PARTE 2: CREDENCIAL INFERIOR (MUNI)
-    // ==========================================
-    const off = 100; 
-    doc.roundedRect(marginX, off, anchoCard, altoCard, 3, 3, 'S');
-    doc.line(centroX, off, centroX, off + altoCard);
-
-    dibujarEncabezado(marginX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS ANIMAL");
-    dibujarEncabezado(centroX, off + 2, 95, "TALÓN DE CONTROL MUNICIPAL", "DATOS PROPIETARIO");
-
-    let yPos2 = off + 28;
-    // IZQUIERDA: DATOS ANIMAL COMPLETOS + PROFESIONAL
-    doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    doc.text(`N° TRÁMITE: ${datos.nroTramite}`, 13, yPos2);
-    
-    doc.setFont("helvetica", "normal");
-    doc.text(`Chip: ${datos.chip}`, 13, yPos2 + gap);
-    doc.text(`Nombre: ${datos.animal}`, 13, yPos2 + gap * 2);
-    doc.text(`Fec. Nac. Animal: ${datos.nacimientoAnimal}`, 13, yPos2 + gap * 3); // Agregado abajo
-    doc.text(`Especie/Raza: ${datos.especie} - ${datos.raza}`, 13, yPos2 + gap * 4);
-    doc.text(`Sexo: ${datos.sexo} | Pelaje: ${datos.pelaje}`, 13, yPos2 + gap * 5);
-    
-    doc.setFont("helvetica", "bold");
-    doc.text(`Vet: ${datos.profesional}`, 13, yPos2 + gap * 6.2);
-    doc.setFontSize(8);
-    doc.text(`Matrícula: ${datos.matricula}`, 13, yPos2 + gap * 7.2);
-
-    // DERECHA: DATOS PROPIETARIO COMPLETOS
-    doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    doc.text("DATOS PROPIETARIO", 108, yPos2);
-    
-    doc.setFont("helvetica", "normal");
-    doc.text(`Nombre: ${datos.propietario}`, 108, yPos2 + gap);
-    doc.text(`DNI: ${datos.dni}`, 108, yPos2 + gap * 2);
-    doc.text(`Fec. Nacimiento: ${datos.nacimientoPropietario}`, 108, yPos2 + gap * 3); // Agregado abajo
-    doc.text(`Domicilio: ${datos.domicilio}`, 108, yPos2 + gap * 4);
-    doc.text(`Teléfono / cel: ${datos.tel}`, 108, yPos2 + gap * 5);
-
-    // FIRMAS Y FECHA TALÓN
-    doc.line(145, off + 72, 195, off + 72);
-    doc.setFontSize(6); 
-    doc.text("Firma del Propietario / Responsable", 170, off + 75, { align: "center" });
-    doc.text(`Mar del Plata, ${fechaHoy}`, 170, off + 78, { align: "center" });
-
-    doc.save(`Credencial_${datos.animal}.pdf`);
-}
         function renderTable(data) {
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
